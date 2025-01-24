@@ -1,0 +1,9 @@
+.idea
+vendor
+__debug_bin
+node_modules/
+bin/
+package-lock.json
+public/output.css
+*.txt
+*templ.go

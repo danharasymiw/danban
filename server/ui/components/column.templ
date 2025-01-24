@@ -1,0 +1,17 @@
+package components
+
+import "github.com/danharasymiw/danban/server/store"
+
+templ ColumnComponent(column *store.Column) {
+<div class="mx-1 p-1 bg-teal-100 text-black rounded-lg">
+  <div class="mx-4 my-1 text-lg">{ column.Name }</div>
+  <div class=" rounded-md">
+    for _, card := range column.Cards {
+    @CardComponent(card)
+    }
+  </div>
+  <div class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg">
+    <button>Add Card</button>
+  </div>
+</div>
+}

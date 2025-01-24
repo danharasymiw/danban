@@ -1,0 +1,16 @@
+package views
+
+import (
+"github.com/danharasymiw/danban/server/store"
+"github.com/danharasymiw/danban/server/ui/components"
+)
+
+templ Board(b *store.Board) {
+@Page(b.Name) {
+<div class="grid grid-cols-3 gap-4">
+  for _, column := range b.Columns {
+  @components.ColumnComponent(column)
+  }
+</div>
+}
+}

@@ -1,0 +1,22 @@
+providers = ['go']
+
+[phases.setup]
+nixPkgs = ["...", "tailwindcss"]
+
+[phases.go-templ]
+cmds = [
+  'go install github.com/a-h/templ/cmd/templ@latest',
+  '/root/go/bin/templ generate',
+]
+[phases.build]
+cmds = [
+  'go build -o service-bin cmd/server/main.go',
+]
+
+[phases.tailwind]
+cmds = [
+	'tailwindcss -c ./tailwind.config.js -i ./public/styles.css -o ./public/output.css',
+]
+
+[start]
+cmd = './service-bin'
