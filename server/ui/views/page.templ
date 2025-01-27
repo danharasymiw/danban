@@ -28,7 +28,8 @@ templ Page(boardName string) {
     <div class="bg-teal-500 md:w-12/12 h-16 shadow-md flex justify-between items-center flex-col md:flex-row">
       <a href="/">
         <div class="cursor-pointer flex justify-center items-center ml-3">
-          <h3 class="text-white font-semibold py-2 md:py-0">Danban</h3>
+          <img src="/public/images/danban_icon.png" class="h-16 mx-2" alt="Danban Logo" />
+          <h3 class="text-white text-2xl font-semibold py-2 md:py-0">Danban</h3>
         </div>
       </a>
       <form class="max-w-sm mx-auto" hx-get="/board" hx-trigger="submit" hx-push-url="true" hx-target="body"
