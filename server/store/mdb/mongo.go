@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,7 +24,13 @@ type MongoDb struct {
 const dbName = "danban"
 
 func New() *MongoDb {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
+	uri := "mongodb://localhost:27017"
+	deployedMongoUrl := os.Getenv("MONGO_URL")
+	if deployedMongoUrl != `` {
+		uri = deployedMongoUrl
+	}
+
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
 		panic(err)
 	}
