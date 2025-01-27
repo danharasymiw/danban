@@ -1,7 +1,5 @@
 package views
 
-import "fmt"
-
 templ Page(boardName string) {
 <!DOCTYPE html>
 <html lang="en">
@@ -33,9 +31,10 @@ templ Page(boardName string) {
           <h3 class="text-white font-semibold py-2 md:py-0">Danban</h3>
         </div>
       </a>
-      <form class="max-w-sm mx-auto" action={ templ.SafeURL(fmt.Sprintf("/board/%s", boardName)) }>
+      <form class="max-w-sm mx-auto" hx-get="/board" hx-trigger="submit" hx-push-url="true" hx-target="body"
+        hx-include="this">
         <div class="flex">
-          <input type="text" id="board_id" placeholder={ boardName } pattern="[A-Za-z0-9]+"
+          <input type="text" name="name" value={ boardName } pattern="[A-Za-z0-9]+"
             class="bg-gray-50 border border-gray-300 text-black text-md rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 shadow-md" />
           <button type="submit"
             class="mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-md w-full sm:w-auto px-5 py-2.5 text-center shadow-md">

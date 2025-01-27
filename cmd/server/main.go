@@ -22,7 +22,17 @@ func main() {
 
 	r.Get("/", handler.HandleHome)
 
-	// board page
+	r.Get("/board", func(w http.ResponseWriter, r *http.Request) {
+		// Parse the query parameter 'name'
+		name := r.URL.Query().Get("name")
+		if name == "" {
+			http.Error(w, "Missing 'name' query parameter", http.StatusBadRequest)
+			return
+		}
+
+		redirectURL := fmt.Sprintf("/board/%s", name)
+		http.Redirect(w, r, redirectURL, http.StatusFound)
+	})
 	r.Get("/board/{boardName}", handler.HandleBoard)
 
 	r.Handle("/public/*", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))

@@ -41,7 +41,6 @@ func New() *MongoDb {
 }
 
 func (m *MongoDb) AddCard(ctx context.Context, boardId, columnId string, card *store.Card) error {
-
 	return errors.New(`Not implemented`)
 }
 
@@ -99,7 +98,11 @@ func (m *MongoDb) AddBoard(ctx context.Context, boardDTO *store.Board) error {
 	err = mongo.WithSession(ctx, session, func(sc mongo.SessionContext) error {
 		var columnIds []primitive.ObjectID
 		for _, column := range boardDTO.Columns {
-			colRes, err := m.columnCol.InsertOne(sc, column)
+			newColumn := &Column{
+				Name:  column.Name,
+				Index: column.Index,
+			}
+			colRes, err := m.columnCol.InsertOne(sc, newColumn)
 			if err != nil {
 				return fmt.Errorf("could not insert column: %v", err)
 			}
@@ -146,53 +149,65 @@ func (m *MongoDb) DeleteBoard(ctx context.Context, boardId string) error {
 	return errors.New(`Not implemented`)
 }
 
-func (m *MongoDb) GetBoard(ctx context.Context, boardName string) (*store.Board, error) {
+func (m *MongoDb) GetBoard(ctx context.Context, name string) (*store.Board, error) {
 
-	pipeline := mongo.Pipeline{
-		// Match board by name
-		{{"$match", bson.D{{"name", boardName}}}},
-
-		// Lookup columns (joining by column ObjectIDs in the board document)
-		{{"$lookup", bson.D{
-			{"from", "columns"},       // Lookup from the columns collection
-			{"localField", "columns"}, // The field from the board (list of ObjectIDs)
-			{"foreignField", "_id"},   // The field in the columns collection
-			{"as", "columns_info"},    // Output the result as "columns_info"
-		}}},
-
-		// Lookup cards (joining by column ObjectIDs)
-		{{"$lookup", bson.D{
-			{"from", "cards"},                  // Lookup from the cards collection
-			{"localField", "columns_info._id"}, // The field from columns_info
-			{"foreignField", "columnId"},       // The field in the cards collection
-			{"as", "columns_info.cards"},       // Output the result as "cards" inside columns
-		}}},
+	// Set up the aggregation pipeline
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"name": name,
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "columns",   // Assuming columns are in a separate collection
+				"localField":   "columnIds", // Board has a list of ColumnIds
+				"foreignField": "_id",       // Column has an _id field
+				"as":           "columns",   // The result will be stored in a "columns" field
+			},
+		},
+		{
+			"$unwind": "$columns", // If you want to unwind the columns to handle them as separate documents
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "cards",         // Assuming cards are in a separate collection
+				"localField":   "columns._id",   // The column Id in the column document
+				"foreignField": "columnId",      // Card has a columnId that references the column
+				"as":           "columns.cards", // The result will be stored in the "cards" field in each column
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id":       "$_id",                    // Group by the board's ID
+				"name":      bson.M{"$first": "$name"}, // Take the first occurrence of the board's name
+				"columnIds": bson.M{"$first": "$columnIds"},
+				"columns":   bson.M{"$push": "$columns"}, // Combine the columns back into an array
+			},
+		},
 	}
 
-	// Run the aggregation query
 	cursor, err := m.boardCol.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("error running aggregation: %v", err)
+		return nil, fmt.Errorf("failed to aggregate: %w", err)
 	}
 	defer cursor.Close(ctx)
 
-	// Process the result
-	var board Board
+	// Check if any board was found
+	var result Board
 	if cursor.Next(ctx) {
-		if err := cursor.Decode(&board); err != nil {
-			return nil, fmt.Errorf("error decoding result: %v", err)
+		if err := cursor.Decode(&result); err != nil {
+			return nil, fmt.Errorf("failed to decode result: %w", err)
 		}
-	} else {
-		// If no documents are found, return an error
+	}
+
+	if result.Id.IsZero() {
 		return nil, &store.NoQueryResultsError{}
 	}
 
-	retBoard := &store.Board{
-		Name: board.Name,
-	}
-
-	for _, column := range board.Columns {
-		cards := make([]*store.Card, len(column.Cards))
+	columns := make([]*store.Column, 0, len(result.Columns))
+	for _, column := range result.Columns {
+		cards := make([]*store.Card, 0, len(column.Cards))
 		for _, card := range column.Cards {
 			cards = append(cards, &store.Card{
 				Id:          card.Id.Hex(),
@@ -201,14 +216,15 @@ func (m *MongoDb) GetBoard(ctx context.Context, boardName string) (*store.Board,
 				Index:       card.Index,
 			})
 		}
-
-		retBoard.Columns = append(retBoard.Columns, &store.Column{
+		columns = append(columns, &store.Column{
 			Id:    column.Id.Hex(),
 			Name:  column.Name,
-			Index: column.Index,
 			Cards: cards,
 		})
 	}
 
-	return retBoard, errors.New(`Not implemented`)
+	return &store.Board{
+		Name:    result.Name,
+		Columns: columns,
+	}, nil
 }

@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
+	"github.com/danharasymiw/danban/server/logger"
 	"github.com/danharasymiw/danban/server/store"
 	"github.com/danharasymiw/danban/server/ui/views"
 	"github.com/go-chi/chi/v5"
@@ -12,37 +14,64 @@ import (
 func (h *Handler) HandleBoard(w http.ResponseWriter, r *http.Request) {
 	boardName := chi.URLParam(r, "boardName")
 
+	logEntry := logger.New(r.Context()).WithField("board", boardName)
+	logEntry.Infof("Received board request")
+
 	board, err := h.storage.GetBoard(r.Context(), boardName)
 	if errors.Is(err, &store.NoQueryResultsError{}) {
-		board = &store.Board{
-			Name: boardName,
-			Columns: []*store.Column{
-				{
-					Index: 0,
-					Name:  "To do",
-					Cards: []*store.Card{
-						{
-							Id:          "id",
-							Index:       0,
-							Title:       "Make cards",
-							Description: "This is a new board, make some cards!",
-						},
+		logEntry.Info("Board not found, creating new board")
+		board, err = h.createNewBoard(r.Context(), boardName)
+		if err != nil {
+			logEntry.Errorf("Failed to create board")
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+	} else if err != nil {
+		logEntry.Errorf("Unexpected error retrieving board")
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	logEntry.Info("Board found, returning")
+	println("board name: ", board.Name)
+	println("board column count: ", len(board.Columns))
+	for _, col := range board.Columns {
+		println("column: ", col.Name)
+		for _, card := range col.Cards {
+			println("card: ", card.Title)
+		}
+	}
+	views.Board(board).Render(r.Context(), w)
+}
+
+func (h *Handler) createNewBoard(ctx context.Context, boardName string) (*store.Board, error) {
+	board := &store.Board{
+		Name: boardName,
+		Columns: []*store.Column{
+			{
+				Index: 0,
+				Name:  "To do",
+				Cards: []*store.Card{
+					{
+						Id:          "id",
+						Index:       0,
+						Title:       "Make cards",
+						Description: "This is a new board, make some cards!",
 					},
 				},
-				{
-					Index: 1,
-					Name:  "In Progress",
-					Cards: []*store.Card{},
-				},
-				{
-					Index: 2,
-					Name:  "Done",
-					Cards: []*store.Card{},
-				},
 			},
-		}
-		h.storage.AddBoard(r.Context(), board)
+			{
+				Index: 1,
+				Name:  "In Progress",
+				Cards: []*store.Card{},
+			},
+			{
+				Index: 2,
+				Name:  "Done",
+				Cards: []*store.Card{},
+			},
+		},
 	}
-
-	views.Board(board).Render(r.Context(), w)
+	return board, h.storage.AddBoard(ctx, board)
 }

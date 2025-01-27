@@ -3,7 +3,7 @@ templ:
 	templ generate --watch --proxy http://localhost:8080
 
 mongo:
-	docker run --name mongodb -p 27017:27017 -d mongo
+	docker-compose up -d
 
 serve:
 	air
