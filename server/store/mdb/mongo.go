@@ -47,8 +47,44 @@ func New() *MongoDb {
 	}
 }
 
-func (m *MongoDb) AddCard(ctx context.Context, boardId, columnId string, card *store.Card) error {
-	return errors.New(`Not implemented`)
+func (m *MongoDb) AddCard(ctx context.Context, boardName, columnIdStr string, card *store.Card) error {
+	var board Board
+	err := m.boardCol.FindOne(ctx, bson.M{"name": boardName}).Decode(&board)
+	if err != nil {
+		return fmt.Errorf("failed to find board: %v", err)
+	}
+
+	columnId, err := primitive.ObjectIDFromHex(columnIdStr)
+	if err != nil {
+		return fmt.Errorf("invalid column id: %s", columnIdStr)
+	}
+
+	found := false
+	for _, foundId := range board.ColumnIds {
+		if foundId == columnId {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("column with id %s not found in board", columnIdStr)
+	}
+
+	newCard := &Card{
+		ColumnId: columnId,
+		Title:    card.Title,
+	}
+
+	result, err := m.cardCol.InsertOne(ctx, newCard)
+	if err != nil {
+		return fmt.Errorf("failed to insert card: %v", err)
+	}
+
+	// TODO - don't like this... return a whole new card instead of modifying the state of given card
+	card.Id = result.InsertedID.(primitive.ObjectID).Hex()
+
+	return nil
 }
 
 func (m *MongoDb) EditCard(ctx context.Context, boardId, columnId, card *store.Card) error {

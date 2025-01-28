@@ -1,17 +1,43 @@
 package components
 
-import "github.com/danharasymiw/danban/server/store"
+import (
+"fmt"
+"github.com/danharasymiw/danban/server/store"
+)
 
-templ ColumnComponent(column *store.Column) {
+templ ColumnComponent(boardName string, column *store.Column) {
 <div class="mx-1 p-1 bg-teal-100 text-black rounded-lg">
   <div class="mx-4 my-1 text-lg">{ column.Name }</div>
-  <div class=" rounded-md">
+  <div id={ fmt.Sprintf("column-%s", column.Id) } class="rounded-md">
     for _, card := range column.Cards {
     @CardComponent(card)
     }
   </div>
-  <div class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg">
-    <button>Add Card</button>
+  <div>
+    <button id={ fmt.Sprintf("column-%s-add-card", column.Id) }
+      class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg" _="on click hide then show the next <form />">
+      Add Card
+    </button>
+    <form hx-post={ fmt.Sprintf("/board/%s/column/%s/cards/add", boardName, column.Id) } class="w-full"
+      style="display: none" hx-swap="beforeend" hx-target={ fmt.Sprintf("#column-%s", column.Id) }
+      _="on htmx:afterRequest reset() me">
+      <div>
+        <input type="text" name="title" minlength="3" maxlength="250" class="bg-white p-2 m-2 rounded-md shadow-sm" />
+      </div>
+      <div>
+        <button type="submit"
+          class="mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-md w-full sm:w-auto px-5 py-2.5 text-center shadow-md">
+          Add
+        </button>
+        <button type="reset" _={ fmt.Sprintf("on click hide closest <form /> then show #column-%s-add-card", column.Id)
+        }
+        class="mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300
+        font-medium rounded-lg text-md w-full sm:w-auto px-5 py-2.5 text-center shadow-md"
+        >
+        Cancel
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 }

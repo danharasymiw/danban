@@ -17,6 +17,13 @@ func (h *Handler) HandleBoard(w http.ResponseWriter, r *http.Request) {
 	logEntry := logger.New(r.Context()).WithField("board", boardName)
 	logEntry.Infof("Received board request")
 
+	if len(boardName) > 32 {
+		logEntry.Errorf("Board name too long")
+		w.WriteHeader(400)
+		w.Write([]byte("board name cannot be longer than 32 characters"))
+		return
+	}
+
 	board, err := h.storage.GetBoard(r.Context(), boardName)
 	if errors.Is(err, &store.NoQueryResultsError{}) {
 		logEntry.Info("Board not found, creating new board")
@@ -34,14 +41,6 @@ func (h *Handler) HandleBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logEntry.Info("Board found, returning")
-	println("board name: ", board.Name)
-	println("board column count: ", len(board.Columns))
-	for _, col := range board.Columns {
-		println("column: ", col.Name)
-		for _, card := range col.Cards {
-			println("card: ", card.Title)
-		}
-	}
 	views.Board(board).Render(r.Context(), w)
 }
 

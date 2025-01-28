@@ -8,5 +8,9 @@ module.exports = {
     extend: {},
   },
   plugins: [],
+  safelist: [
+    'hidden',
+    'invisible',
+    'opacity-0',
+  ],
 }
-

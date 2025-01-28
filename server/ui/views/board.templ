@@ -9,7 +9,7 @@ templ Board(b *store.Board) {
 @Page(b.Name) {
 <div class="grid grid-cols-3 gap-4">
   for _, column := range b.Columns {
-  @components.ColumnComponent(column)
+  @components.ColumnComponent(b.Name, column)
   }
 </div>
 }

@@ -4,6 +4,6 @@ import "github.com/danharasymiw/danban/server/store"
 
 templ CardComponent(card *store.Card) {
 <div class="bg-white p-2 m-2 rounded-md shadow-sm">
-  <div class="text-md">{ card.Title }</div>
+  <div class="text-md text-ellipsis break-word">{ card.Title }</div>
 </div>
 }
