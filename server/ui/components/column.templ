@@ -15,7 +15,7 @@ templ ColumnComponent(boardName string, column *store.Column) {
   </div>
   <div>
     <button id={ fmt.Sprintf("column-%s-add-card", column.Id) }
-      class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg" _="on click hide then show the next <form />">
+      class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg" _="on click hide me then show the next <form />">
       Add Card
     </button>
     <form hx-post={ fmt.Sprintf("/board/%s/column/%s/cards/add", boardName, column.Id) } class="py-1 px-2"
