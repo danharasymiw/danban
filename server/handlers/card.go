@@ -23,7 +23,7 @@ func (h *Handler) AddCard(w http.ResponseWriter, r *http.Request) {
 	logEntry.Infof("Received add card request")
 
 	title := r.FormValue("title")
-	if len(title) <= 3 || len(title) >= 250 {
+	if len(title) < 3 || len(title) > 250 {
 		logEntry.WithField("title length", len(title)).Info("Card title too short or too long")
 		w.WriteHeader(400)
 		w.Write([]byte("card title must be between 3 and 250 characters"))
