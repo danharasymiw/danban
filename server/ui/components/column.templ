@@ -21,7 +21,7 @@ templ ColumnComponent(boardName string, column *store.Column) {
     <form hx-post={ fmt.Sprintf("/board/%s/column/%s/cards/add", boardName, column.Id) } class="py-1 px-2"
       style="display: none" hx-swap="beforeend" hx-target={ fmt.Sprintf("#column-%s", column.Id) }
       _="on htmx:afterRequest reset() me">
-      <input type="text" name="title" minlength="3" maxlength="20"
+      <input type="text" name="title" minlength="3" maxlength="250"
         class="w-full px-2 py-2 bg-white rounded-md shadow-sm" />
       <div class="p-2">
         <button type="submit"
