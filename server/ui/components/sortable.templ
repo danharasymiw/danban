@@ -13,12 +13,6 @@ templ SortableCards(boardName string) {
         animation: 150,
         ghostClass: 'blue-background-class',
 
-        // Make the `.htmx-indicator` unsortable
-        filter: ".htmx-indicator",
-        onMove: function (evt) {
-          return evt.related.className.indexOf('htmx-indicator') === -1;
-        },
-
         onEnd: function (evt) {
           let fromColumnId = evt.from.id.replace('column-', '');
           let toColumnId = evt.to.id.replace('column-', '');
