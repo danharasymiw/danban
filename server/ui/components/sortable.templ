@@ -1,0 +1,44 @@
+package components
+
+templ SortableCards(boardName string) {
+<script data-board-name={ boardName }>
+  var boardName = document.currentScript.getAttribute('data-board-name');
+
+  htmx.onLoad(function (content) {
+    var sortables = content.querySelectorAll(".sortable");
+    for (var i = 0; i < sortables.length; i++) {
+      var sortable = sortables[i];
+      var sortableInstance = new Sortable(sortable, {
+        animation: 150,
+        ghostClass: 'blue-background-class',
+
+        // Make the `.htmx-indicator` unsortable
+        filter: ".htmx-indicator",
+        onMove: function (evt) {
+          return evt.related.className.indexOf('htmx-indicator') === -1;
+        },
+
+        onEnd: function (evt) {
+          let fromColumnId = evt.from.id.replace('column-', '');
+          let toColumnId = evt.to.id.replace('column-', '');
+          let cardId = evt.item.id.replace('card-', '');
+          let newIndex = evt.newIndex;
+          let data = {
+            fromColumnId: fromColumnId,
+            toColumnId: toColumnId,
+            cardId: cardId,
+            newIndex: newIndex,
+          };
+          fetch('/board/' + boardName + '/moveCard', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          }).catch(error => console.log('Error:', error));
+        }
+      });
+    }
+  })
+</script>
+}

@@ -19,7 +19,8 @@ templ Page(boardName string) {
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap"
     rel="stylesheet" />
   <script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
-  <script src="https://unpkg.com/browse/hyperscript.org@0.9.13/src/ext/tailwind.js"></script>
+  <script src="https://unpkg.com/sortablejs@1.15.6"></script>
+  <script src="https://unpkg.com/hyperscript.org@0.9.13/src/ext/tailwind.js"></script>
   <script src="https://unpkg.com/htmx.org@2.0.0"></script>
 </head>
 
@@ -34,7 +35,7 @@ templ Page(boardName string) {
         </div>
       </a>
       <form class="max-w-sm mx-auto" hx-get="/board" hx-trigger="submit" hx-push-url="true" hx-target="body"
-        hx-include="this">
+        hx-swap="innerHtml" hx-include="this">
         <div class="flex">
           <input type="text" name="name" value={ boardName } pattern="[A-Za-z0-9]+" minlength="3" maxlength="32"
             class="bg-gray-50 border border-gray-300 text-black text-md rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 shadow-md" />
@@ -55,7 +56,7 @@ templ Page(boardName string) {
       </ul>
     </div>
   </nav>
-  <div class="w-full flex-grow max-w-screen-xl p-9 min-h-80 items-center justify-between mx-auto bg-transparent">
+  <div class="w-full flex-grow max-w-screen-xl items-center justify-between mx-auto bg-transparent">
     { children... }
   </div>
 </body>

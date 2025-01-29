@@ -7,10 +7,14 @@ import (
 
 templ Board(b *store.Board) {
 @Page(b.Name) {
-<div class="grid grid-cols-3 gap-4">
+<div class="h-full flex flex-wrap gap-4 m-4 overflow-x-scroll">
   for _, column := range b.Columns {
   @components.ColumnComponent(b.Name, column)
   }
 </div>
+<script>
+  _hyperscript.config.defaultHideShowStrategy = 'twDisplay';
+</script>
+@components.SortableCards(b.Name)
 }
 }

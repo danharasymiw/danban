@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 
 	"github.com/danharasymiw/danban/server/logger"
-	"github.com/danharasymiw/danban/server/store"
 	"github.com/danharasymiw/danban/server/ui/components"
 )
 
@@ -30,14 +30,10 @@ func (h *Handler) AddCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	card := &store.Card{
-		Title: title,
-	}
-
-	logEntry.Errorf("Unexpected error adding card")
-	if err := h.storage.AddCard(r.Context(), boardName, columnId, card); err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
+	card, err := h.storage.AddCard(r.Context(), boardName, columnId, title)
+	if err != nil {
+		logEntry.Errorf(fmt.Sprintf("Unexpected error adding card: %w", err))
+		http.Error(w, "Error adding card", http.StatusInternalServerError)
 		return
 	}
 
@@ -45,9 +41,5 @@ func (h *Handler) AddCard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) EditCard(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *Handler) MoveCard(w http.ResponseWriter, r *http.Request) {
 
 }

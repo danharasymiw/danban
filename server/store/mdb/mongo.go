@@ -47,16 +47,19 @@ func New() *MongoDb {
 	}
 }
 
-func (m *MongoDb) AddCard(ctx context.Context, boardName, columnIdStr string, card *store.Card) error {
+func (m *MongoDb) AddCard(ctx context.Context, boardName, columnIdStr string, cardTitle string) (*store.Card, error) {
 	var board Board
 	err := m.boardCol.FindOne(ctx, bson.M{"name": boardName}).Decode(&board)
 	if err != nil {
-		return fmt.Errorf("failed to find board: %v", err)
+		if err == mongo.ErrNoDocuments {
+			return nil, store.NewNotFoundError("board", boardName)
+		}
+		return nil, fmt.Errorf("failed to find board: %v", err)
 	}
 
 	columnId, err := primitive.ObjectIDFromHex(columnIdStr)
 	if err != nil {
-		return fmt.Errorf("invalid column id: %s", columnIdStr)
+		return nil, store.NewBadRequestError(fmt.Sprintf("invalid column id: %s", columnIdStr))
 	}
 
 	found := false
@@ -68,31 +71,165 @@ func (m *MongoDb) AddCard(ctx context.Context, boardName, columnIdStr string, ca
 	}
 
 	if !found {
-		return fmt.Errorf("column with id %s not found in board", columnIdStr)
+		return nil, store.NewBadRequestError(fmt.Sprintf("board does not have column: ", columnIdStr))
+	}
+
+	pipeline := mongo.Pipeline{
+		{
+			{"$match", bson.D{
+				{"columnId", columnId},
+			}},
+		},
+		{
+			{"$group", bson.D{
+				{"_id", "$columnId"},
+				{"maxIndex", bson.D{{"$max", "$index"}}},
+			}},
+		},
+	}
+
+	cursor, err := m.cardCol.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate when find new index value for card: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+
+	var maxIndexResult []struct {
+		MaxIndex int `bson:"maxIndex"`
+	}
+	if err = cursor.All(ctx, &maxIndexResult); err != nil {
+		return nil, fmt.Errorf("failed to parse result when finding new index value for card: %v", err)
+	}
+
+	maxIndex := -1
+	if len(maxIndexResult) > 0 {
+		maxIndex = maxIndexResult[0].MaxIndex
 	}
 
 	newCard := &Card{
 		ColumnId: columnId,
-		Title:    card.Title,
+		Title:    cardTitle,
+		Index:    maxIndex + 1,
 	}
 
 	result, err := m.cardCol.InsertOne(ctx, newCard)
 	if err != nil {
-		return fmt.Errorf("failed to insert card: %v", err)
+		return nil, fmt.Errorf("failed to insert card: %v", err)
 	}
 
-	// TODO - don't like this... return a whole new card instead of modifying the state of given card
-	card.Id = result.InsertedID.(primitive.ObjectID).Hex()
-
-	return nil
+	return &store.Card{
+		Id:    result.InsertedID.(primitive.ObjectID).Hex(),
+		Title: cardTitle,
+		Index: 0,
+	}, nil
 }
 
 func (m *MongoDb) EditCard(ctx context.Context, boardId, columnId, card *store.Card) error {
 	return errors.New(`Not implemented`)
 }
 
-func (m *MongoDb) MoveCard(ctx context.Context, boardId, columnId string, index uint8) error {
-	return errors.New(`Not implemented`)
+func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toColumnIdStr, cardIdStr string, newIndex int) error {
+	// Verify inputs are good
+	var board Board
+	err := m.boardCol.FindOne(ctx, bson.M{"name": boardName}).Decode(&board)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return store.NewNotFoundError("board", boardName)
+		}
+		return fmt.Errorf("error finding board by name %s: %w", boardName, err)
+	}
+
+	fromColumnId, err := primitive.ObjectIDFromHex(fromColumnIdStr)
+	if err != nil {
+		return store.NewBadRequestError("invalid from column id")
+	}
+	if !contains(board.ColumnIds, fromColumnId) {
+		return store.NewBadRequestError(fmt.Sprintf("board does not have column: %s", fromColumnIdStr))
+	}
+
+	toColumnId, err := primitive.ObjectIDFromHex(toColumnIdStr)
+	if err != nil {
+		return store.NewBadRequestError("invalid to column id")
+	}
+	if !contains(board.ColumnIds, toColumnId) {
+		return store.NewBadRequestError(fmt.Sprintf("board does not have column: %s", toColumnId))
+	}
+
+	cardId, err := primitive.ObjectIDFromHex(cardIdStr)
+	if err != nil {
+		return store.NewBadRequestError("invalid card id")
+	}
+	var card Card
+	err = m.cardCol.FindOne(ctx, bson.M{"_id": cardId}).Decode(&card)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return store.NewNotFoundError("card", cardIdStr)
+		}
+		return fmt.Errorf("error finding board by id %s: %w", cardId, err)
+	}
+
+	if card.ColumnId != fromColumnId {
+		return store.NewBadRequestError(fmt.Sprintf("card %s does not exist on column %s", cardIdStr, fromColumnIdStr))
+	}
+
+	session, err := m.client.StartSession()
+	if err != nil {
+		return fmt.Errorf("failed to start session: %w", err)
+	}
+	defer session.EndSession(ctx)
+
+	// TODO Validate that the new index is within range
+	if fromColumnId == toColumnId {
+		if newIndex < card.Index {
+			_, err = m.cardCol.UpdateMany(
+				ctx,
+				bson.M{
+					"columnId": fromColumnId,
+					"index":    bson.M{"$gte": newIndex, "$lt": card.Index},
+				},
+				bson.M{
+					"$inc": bson.M{"index": 1},
+				},
+			)
+		} else if newIndex > card.Index {
+			_, err = m.cardCol.UpdateMany(
+				ctx,
+				bson.M{
+					"columnId": fromColumnId,
+					"index":    bson.M{"$lte": newIndex, "$gt": card.Index},
+				},
+				bson.M{
+					"$inc": bson.M{"index": -1},
+				},
+			)
+		}
+		if err != nil {
+			return fmt.Errorf("error shifting card indices: %w", err)
+		}
+		_, err := m.cardCol.UpdateOne(
+			ctx,
+			bson.M{"_id": cardId},
+			bson.M{
+				"$set": bson.M{
+					"index": newIndex,
+				},
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update card index: %w", err)
+		}
+	}
+
+	return err
+}
+
+func contains(haystack []primitive.ObjectID, needle primitive.ObjectID) bool {
+	for _, id := range haystack {
+		if id == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *MongoDb) DeleteCard(ctx context.Context, boardId, columnId, cardId string) error {
@@ -127,7 +264,7 @@ func (m *MongoDb) GetColumn(ctx context.Context, boardId, columnId string) (*sto
 	return nil, errors.New(`Not implemented`)
 }
 
-func (m *MongoDb) GetColumns(ctx context.Context, boardId, columnId string) ([]*store.Column, error) {
+func (m *MongoDb) GetColumns(ctx context.Context, boardName string) ([]*store.Column, error) {
 	return nil, errors.New(`Not implemented`)
 }
 
@@ -221,6 +358,18 @@ func (m *MongoDb) GetBoard(ctx context.Context, name string) (*store.Board, erro
 			},
 		},
 		{
+			"$addFields": bson.M{
+				"columns.cards": bson.M{
+					"$sortArray": bson.M{
+						"input": "$columns.cards", // The array to sort
+						"sortBy": bson.M{
+							"index": 1, // Sort by the index field in ascending order
+						},
+					},
+				},
+			},
+		},
+		{
 			"$group": bson.M{
 				"_id":       "$_id",                    // Group by the board's ID
 				"name":      bson.M{"$first": "$name"}, // Take the first occurrence of the board's name
@@ -245,7 +394,7 @@ func (m *MongoDb) GetBoard(ctx context.Context, name string) (*store.Board, erro
 	}
 
 	if result.Id.IsZero() {
-		return nil, &store.NoQueryResultsError{}
+		return nil, store.NewNotFoundError("board", name)
 	}
 
 	columns := make([]*store.Column, 0, len(result.Columns))
