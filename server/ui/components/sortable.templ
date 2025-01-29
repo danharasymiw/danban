@@ -9,6 +9,7 @@ templ SortableCards(boardName string) {
     for (var i = 0; i < sortables.length; i++) {
       var sortable = sortables[i];
       var sortableInstance = new Sortable(sortable, {
+        group: 'shared',
         animation: 150,
         ghostClass: 'blue-background-class',
 

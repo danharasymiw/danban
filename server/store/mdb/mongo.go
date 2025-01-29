@@ -155,6 +155,15 @@ func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toCo
 		return store.NewBadRequestError(fmt.Sprintf("board does not have column: %s", toColumnId))
 	}
 
+	count, err := m.cardCol.CountDocuments(ctx, bson.M{"columnId": toColumnId})
+	if err != nil {
+		return fmt.Errorf("failed to count documents in target column: %w", err)
+	}
+
+	if newIndex < 0 || newIndex > int(count) {
+		return store.NewBadRequestError(fmt.Sprintf("invalid index %d for column %s, valid range is 0 to %d", newIndex, toColumnIdStr, count))
+	}
+
 	cardId, err := primitive.ObjectIDFromHex(cardIdStr)
 	if err != nil {
 		return store.NewBadRequestError("invalid card id")
@@ -172,13 +181,6 @@ func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toCo
 		return store.NewBadRequestError(fmt.Sprintf("card %s does not exist on column %s", cardIdStr, fromColumnIdStr))
 	}
 
-	session, err := m.client.StartSession()
-	if err != nil {
-		return fmt.Errorf("failed to start session: %w", err)
-	}
-	defer session.EndSession(ctx)
-
-	// TODO Validate that the new index is within range
 	if fromColumnId == toColumnId {
 		if newIndex < card.Index {
 			_, err = m.cardCol.UpdateMany(
@@ -206,18 +208,47 @@ func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toCo
 		if err != nil {
 			return fmt.Errorf("error shifting card indices: %w", err)
 		}
-		_, err := m.cardCol.UpdateOne(
+	} else {
+		_, err := m.cardCol.UpdateMany(
 			ctx,
-			bson.M{"_id": cardId},
 			bson.M{
-				"$set": bson.M{
-					"index": newIndex,
-				},
+				"columnId": fromColumnId,
+				"index":    bson.M{"$gt": card.Index},
+			},
+			bson.M{
+				"$inc": bson.M{"index": 1},
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("failed to update card index: %w", err)
+			return fmt.Errorf("error shifting card indices in from column: %w", err)
 		}
+
+		_, err = m.cardCol.UpdateMany(
+			ctx,
+			bson.M{
+				"columnId": toColumnId,
+				"index":    bson.M{"$gte": newIndex},
+			},
+			bson.M{
+				"$inc": bson.M{"index": 1},
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("error shifting card indices in to column: %w", err)
+		}
+	}
+	_, err = m.cardCol.UpdateOne(
+		ctx,
+		bson.M{"_id": cardId},
+		bson.M{
+			"$set": bson.M{
+				"columnId": toColumnId,
+				"index":    newIndex,
+			},
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update card index: %w", err)
 	}
 
 	return err
