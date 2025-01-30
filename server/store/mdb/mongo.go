@@ -74,42 +74,15 @@ func (m *MongoDb) AddCard(ctx context.Context, boardName, columnIdStr string, ca
 		return nil, store.NewBadRequestError(fmt.Sprintf("board does not have column: ", columnIdStr))
 	}
 
-	pipeline := mongo.Pipeline{
-		{
-			{"$match", bson.D{
-				{"columnId", columnId},
-			}},
-		},
-		{
-			{"$group", bson.D{
-				{"_id", "$columnId"},
-				{"maxIndex", bson.D{{"$max", "$index"}}},
-			}},
-		},
-	}
-
-	cursor, err := m.cardCol.Aggregate(context.TODO(), pipeline)
+	count, err := m.cardCol.CountDocuments(ctx, bson.M{"columnId": columnId})
 	if err != nil {
-		return nil, fmt.Errorf("failed to aggregate when find new index value for card: %v", err)
-	}
-	defer cursor.Close(context.TODO())
-
-	var maxIndexResult []struct {
-		MaxIndex int `bson:"maxIndex"`
-	}
-	if err = cursor.All(ctx, &maxIndexResult); err != nil {
-		return nil, fmt.Errorf("failed to parse result when finding new index value for card: %v", err)
-	}
-
-	maxIndex := -1
-	if len(maxIndexResult) > 0 {
-		maxIndex = maxIndexResult[0].MaxIndex
+		return nil, fmt.Errorf("failed to count documents in target column: %w", err)
 	}
 
 	newCard := &Card{
 		ColumnId: columnId,
 		Title:    cardTitle,
-		Index:    maxIndex + 1,
+		Index:    int(count),
 	}
 
 	result, err := m.cardCol.InsertOne(ctx, newCard)
@@ -128,7 +101,7 @@ func (m *MongoDb) EditCard(ctx context.Context, boardId, columnId, card *store.C
 	return errors.New(`Not implemented`)
 }
 
-func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toColumnIdStr, cardIdStr string, newIndex int) error {
+func (m *MongoDb) MoveCard(ctx context.Context, boardName, toColumnIdStr, cardIdStr string, newIndex int) error {
 	// Verify inputs are good
 	var board Board
 	err := m.boardCol.FindOne(ctx, bson.M{"name": boardName}).Decode(&board)
@@ -139,12 +112,20 @@ func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toCo
 		return fmt.Errorf("error finding board by name %s: %w", boardName, err)
 	}
 
-	fromColumnId, err := primitive.ObjectIDFromHex(fromColumnIdStr)
+	cardId, err := primitive.ObjectIDFromHex(cardIdStr)
 	if err != nil {
-		return store.NewBadRequestError("invalid from column id")
+		return store.NewBadRequestError("invalid card id")
 	}
-	if !contains(board.ColumnIds, fromColumnId) {
-		return store.NewBadRequestError(fmt.Sprintf("board does not have column: %s", fromColumnIdStr))
+	var card Card
+	err = m.cardCol.FindOne(ctx, bson.M{"_id": cardId}).Decode(&card)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return store.NewNotFoundError("card", cardIdStr)
+		}
+		return fmt.Errorf("error finding board by id %s: %w", cardId, err)
+	}
+	if !contains(board.ColumnIds, card.ColumnId) {
+		return store.NewBadRequestError(fmt.Sprintf("board does not have card: %s", cardIdStr))
 	}
 
 	toColumnId, err := primitive.ObjectIDFromHex(toColumnIdStr)
@@ -161,32 +142,15 @@ func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toCo
 	}
 
 	if newIndex < 0 || newIndex > int(count) {
-		return store.NewBadRequestError(fmt.Sprintf("invalid index %d for column %s, valid range is 0 to %d", newIndex, toColumnIdStr, count))
+		newIndex = int(count)
 	}
 
-	cardId, err := primitive.ObjectIDFromHex(cardIdStr)
-	if err != nil {
-		return store.NewBadRequestError("invalid card id")
-	}
-	var card Card
-	err = m.cardCol.FindOne(ctx, bson.M{"_id": cardId}).Decode(&card)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return store.NewNotFoundError("card", cardIdStr)
-		}
-		return fmt.Errorf("error finding board by id %s: %w", cardId, err)
-	}
-
-	if card.ColumnId != fromColumnId {
-		return store.NewBadRequestError(fmt.Sprintf("card %s does not exist on column %s", cardIdStr, fromColumnIdStr))
-	}
-
-	if fromColumnId == toColumnId {
+	if card.ColumnId == toColumnId {
 		if newIndex < card.Index {
 			_, err = m.cardCol.UpdateMany(
 				ctx,
 				bson.M{
-					"columnId": fromColumnId,
+					"columnId": card.ColumnId,
 					"index":    bson.M{"$gte": newIndex, "$lt": card.Index},
 				},
 				bson.M{
@@ -197,7 +161,7 @@ func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toCo
 			_, err = m.cardCol.UpdateMany(
 				ctx,
 				bson.M{
-					"columnId": fromColumnId,
+					"columnId": card.ColumnId,
 					"index":    bson.M{"$lte": newIndex, "$gt": card.Index},
 				},
 				bson.M{
@@ -208,15 +172,15 @@ func (m *MongoDb) MoveCard(ctx context.Context, boardName, fromColumnIdStr, toCo
 		if err != nil {
 			return fmt.Errorf("error shifting card indices: %w", err)
 		}
-	} else {
+	} else { // Moving from one column to another
 		_, err := m.cardCol.UpdateMany(
 			ctx,
 			bson.M{
-				"columnId": fromColumnId,
+				"columnId": card.ColumnId,
 				"index":    bson.M{"$gt": card.Index},
 			},
 			bson.M{
-				"$inc": bson.M{"index": 1},
+				"$inc": bson.M{"index": -1},
 			},
 		)
 		if err != nil {

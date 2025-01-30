@@ -11,7 +11,6 @@ templ SortableCards(boardName string) {
       var sortableInstance = new Sortable(sortable, {
         group: 'shared',
         animation: 150,
-        ghostClass: 'blue-background-class',
 
         onEnd: function (evt) {
           let fromColumnId = evt.from.id.replace('column-', '');

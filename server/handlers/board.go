@@ -79,10 +79,9 @@ func (h *Handler) createNewBoard(ctx context.Context, boardName string) (*store.
 }
 
 type moveCardRequest struct {
-	CardId       string `json:"cardId"`
-	NewIndex     int    `json:"newIndex"`
-	FromColumnId string `json:"fromColumnId"`
-	ToColumnId   string `json:"toColumnId"`
+	CardId     string `json:"cardId"`
+	NewIndex   int    `json:"newIndex"`
+	ToColumnId string `json:"toColumnId"`
 }
 
 func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
@@ -100,14 +99,13 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logEntry = logEntry.WithFields(logrus.Fields{
-		"from column": req.FromColumnId,
-		"to column":   req.ToColumnId,
-		"card id":     req.CardId,
-		"new index":   req.NewIndex,
+		"to column": req.ToColumnId,
+		"card id":   req.CardId,
+		"new index": req.NewIndex,
 	})
 	logEntry.Info("Found move card args")
 
-	if err = h.storage.MoveCard(ctx, boardName, req.FromColumnId, req.ToColumnId, req.CardId, req.NewIndex); err != nil {
+	if err = h.storage.MoveCard(ctx, boardName, req.ToColumnId, req.CardId, req.NewIndex); err != nil {
 		logEntry.Error("error moving card: ", err)
 		if _, ok := err.(store.BadRequestError); ok {
 			http.Error(w, fmt.Sprintf("Error moving card: ", err), http.StatusBadRequest)

@@ -7,7 +7,7 @@ import (
 type Storage interface {
 	AddCard(ctx context.Context, boardName, columnId string, title string) (*Card, error)
 	EditCard(ctx context.Context, boardName, columnId, card *Card) error
-	MoveCard(ctx context.Context, boardName, fromColumnId, toColumnId, cardId string, index int) error
+	MoveCard(ctx context.Context, boardName, toColumnId, cardId string, index int) error
 	DeleteCard(ctx context.Context, boardName, columnId, cardId string) error
 	GetCard(ctx context.Context, boardName, columnId, cardId string) (*Card, error)
 	GetCards(ctx context.Context, boardName, columnId, cardId string) ([]*Card, error)
