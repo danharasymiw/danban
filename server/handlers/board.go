@@ -20,10 +20,8 @@ func (h *Handler) HandleBoard(w http.ResponseWriter, r *http.Request) {
 	logEntry := logger.New(r.Context()).WithField("board", boardName)
 	logEntry.Infof("Received get board request")
 
-	if len(boardName) > 32 {
-		logEntry.Errorf("Board name too long")
-		w.WriteHeader(400)
-		w.Write([]byte("board name cannot be longer than 32 characters"))
+	if len(boardName) <= 3 || len(boardName) > 32 {
+		handleError(logEntry, "invalid board name length", w, store.NewBadRequestError("board name must be between 3 and 32 characters"))
 		return
 	}
 
@@ -33,16 +31,15 @@ func (h *Handler) HandleBoard(w http.ResponseWriter, r *http.Request) {
 			logEntry.Info("Board not found, creating new board")
 			board, err = h.createNewBoard(r.Context(), boardName)
 			if err != nil {
-				logEntry.Errorf("Failed to create board ", err)
-				http.Error(w, "Failed to create board", http.StatusInternalServerError)
+				handleError(logEntry, "failed to create board", w, err)
 				return
 			}
 		} else {
-			logEntry.Errorf("Failed to get board: %s", err)
-			http.Error(w, "Failed to get board", http.StatusInternalServerError)
+			handleError(logEntry, "failed to get board", w, err)
 			return
 		}
 	}
+
 	logEntry.Info("Board found, returning")
 	views.Board(board).Render(r.Context(), w)
 }
@@ -95,7 +92,7 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error decoding request: %s", err), http.StatusBadRequest)
+		handleError(logEntry, "error decoding request", w, store.NewBadRequestError(fmt.Sprintf("error decoding request: %s", err)))
 		return
 	}
 	logEntry = logEntry.WithFields(logrus.Fields{
@@ -105,13 +102,8 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	})
 	logEntry.Info("Found move card args")
 
-	if err = h.storage.MoveCard(ctx, boardName, req.ToColumnId, req.CardId, req.NewIndex); err != nil {
-		logEntry.Error("error moving card: ", err)
-		if _, ok := err.(store.BadRequestError); ok {
-			http.Error(w, fmt.Sprintf("Error moving card: ", err), http.StatusBadRequest)
-		} else {
-			http.Error(w, "Internal error moving card", http.StatusInternalServerError)
-		}
+	if err = h.storage.MoveCard(ctx, req.ToColumnId, req.CardId, req.NewIndex); err != nil {
+		handleError(logEntry, "error moving card in storage", w, err)
 		return
 	}
 
