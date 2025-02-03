@@ -10,7 +10,7 @@ templ ColumnComponent(boardName string, column *store.Column) {
   <div class="mx-4 my-1 text-lg">{ column.Name }</div>
   <div id={ fmt.Sprintf("column-%s", column.Id) } class="sortable rounded-md">
     for _, card := range column.Cards {
-    @CardComponent(card)
+    @CardComponent(boardName, column.Id, card)
     }
   </div>
   <div>

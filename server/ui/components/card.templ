@@ -5,8 +5,10 @@ import (
 "github.com/danharasymiw/danban/server/store"
 )
 
-templ CardComponent(card *store.Card) {
-<div id={ fmt.Sprintf("card-%s", card.Id) } class="bg-white p-2 m-2 rounded-md shadow-sm">
+templ CardComponent(boardName, columnId string, card *store.Card) {
+<div id={ fmt.Sprintf("card-%s", card.Id) } class="    bg-white p-2 m-2 rounded-md shadow-sm" hx-trigger="click"
+  hx-target="body" hx-get={ fmt.Sprintf("/board/%s/column/%s/card/%s/edit", boardName, columnId, card.Id) }
+  hx-swap="beforeend">
   <div class="text-md text-ellipsis break-word">{ card.Title }</div>
 </div>
 }
