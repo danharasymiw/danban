@@ -6,7 +6,7 @@ import (
 )
 
 templ EditCardModal(boardName, columnId string, card *store.Card, columns []*store.Column) {
-<div id="modal">
+<div id="edit-modal">
   <!-- Overlay -->
   <div class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
   <!-- Modal Content -->
@@ -16,12 +16,13 @@ templ EditCardModal(boardName, columnId string, card *store.Card, columns []*sto
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-semibold">Edit Card</h2>
         <button type="button" class="text-gray-800 text-2xl hover:text-gray-600 focus:outline-none"
-          onclick="closeModal()">
+          _="on click remove #edit-modal">
           &times;
         </button>
       </div>
       <form hx-put={ fmt.Sprintf("/board/%s/column/%s/card/%s/edit", boardName, columnId, card.Id) } hx-trigger="submit"
-        hx-target={ fmt.Sprintf("#card-%s", card.Id) } class="space-y-4" hx-swap="outerHTML">
+        hx-target={ fmt.Sprintf("#card-%s", card.Id) } class="space-y-4" hx-swap="outerHTML"
+        _="on submit remove #edit-modal">
         <!-- Input for editing the card title -->
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
