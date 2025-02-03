@@ -112,7 +112,7 @@ func (h *Handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 
 func getFormCardTitle(r *http.Request, w http.ResponseWriter) (string, error) {
 	title := r.FormValue(`title`)
-	if len(title) < 3 || len(title) >= 32 {
+	if len(title) < 3 || len(title) > 32 {
 		return ``, store.NewBadRequestError(`title must be between 4 and 32 characters`)
 	}
 
