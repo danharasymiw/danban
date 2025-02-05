@@ -223,8 +223,39 @@ func contains(haystack []primitive.ObjectID, needle primitive.ObjectID) bool {
 	return false
 }
 
-func (m *MongoDb) DeleteCard(ctx context.Context, boardName, columnIdStr, cardIdStr string) error {
-	return errors.New(`Not implemented`)
+func (m *MongoDb) DeleteCard(ctx context.Context, columnIdStr, cardIdStr string, cardIndex int) error {
+	cardId, err := primitive.ObjectIDFromHex(cardIdStr)
+	if err != nil {
+		return store.NewBadRequestError(fmt.Sprintf("invalid card id: %s", cardIdStr))
+	}
+	columnId, err := primitive.ObjectIDFromHex(columnIdStr)
+	if err != nil {
+		return store.NewBadRequestError(fmt.Sprintf("invalid column id: %s", columnIdStr))
+	}
+
+	result, err := m.cardCol.DeleteOne(ctx, bson.M{"_id": cardId})
+	if err != nil {
+		return fmt.Errorf("failed to delete card: %v", err)
+	}
+
+	if result.DeletedCount == 0 {
+		return fmt.Errorf("no card found while deleting with ID: %v", cardIdStr)
+	}
+
+	_, err = m.cardCol.UpdateMany(
+		ctx,
+		bson.M{
+			"columnId": columnId,
+			"index":    bson.M{"$gt": cardIndex},
+		},
+		bson.M{
+			"$inc": bson.M{"index": -1},
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("error shifting card indices during delete: %w", err)
+	}
+	return nil
 }
 
 func (m *MongoDb) GetCard(ctx context.Context, cardIdStr string) (*store.Card, error) {

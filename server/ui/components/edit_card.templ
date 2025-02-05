@@ -1,96 +1,77 @@
 package components
 
 import (
-	"fmt"
-	"github.com/danharasymiw/danban/server/constants"
-	"github.com/danharasymiw/danban/server/store"
+"fmt"
+"github.com/danharasymiw/danban/server/constants"
+"github.com/danharasymiw/danban/server/store"
 )
 
 templ EditCardModal(boardName, columnId string, card *store.Card, columns []*store.Column) {
-	<div id="edit-modal">
-		<!-- Overlay -->
-		<div class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
-		<!-- Modal Content -->
-		<div class="fixed inset-0 z-50 flex justify-center items-center p-4 md:p-8">
-			<div class="relative bg-gray-50 text-black rounded-lg shadow-lg max-w-lg w-full p-6 space-y-6">
-				<!-- Modal Header: Title and Close Button (X) -->
-				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-2xl font-semibold">Edit Card</h2>
-					<button
-						type="button"
-						class="text-gray-800 text-2xl hover:text-gray-600 focus:outline-none"
-						_="on click remove #edit-modal"
-					>
-						&times;
-					</button>
-				</div>
-				<form
-					hx-put={ fmt.Sprintf("/board/%s/column/%s/card/%s/edit", boardName, columnId, card.Id) }
-					hx-trigger="submit"
-					hx-target={ fmt.Sprintf("#card-%s", card.Id) }
-					class="space-y-4"
-					hx-swap="outerHTML"
-					_="on submit remove #edit-modal"
-				>
-					<!-- Input for editing the card title -->
-					<div>
-						<label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-						<input
-							type="text"
-							id="title"
-							name="title"
-							value={ card.Title }
-							minlength={ fmt.Sprintf("%d",
-            constants.MinTitleLength) }
-							maxlength={ fmt.Sprintf("%d", constants.MaxTitleLength) }
-							required
-							class="mt-1 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-600"
-						/>
-					</div>
-					<!-- Input for selecting the column to move the card to -->
-					<div>
-						<label for="column-picker" class="block text-sm font-medium text-gray-700">Column</label>
-						<select
-							id="column-picker"
-							name="toColumnId"
-							class="mt-1 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-600"
-							_="on change toggle [@checked] on the next <input/>"
-						>
-							for _, column := range columns {
-								<option selected?={ columnSelected(columnId, column.Id) } value={ column.Id }>{ column.Name }</option>
-							}
-						</select>
-						<input type="checkbox" name="columnChanged" value="true" hidden/>
-					</div>
-					<!-- Input for description -->
-					<div>
-						<label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-						<textarea
-							id="description"
-							name="description"
-							rows="4"
-							maxlength="2048"
-							placeholder="Enter the card description here..."
-							class="mt-1 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-600"
-						>
-							{ card.Description }
-						</textarea>
-					</div>
-					<!-- Save Button -->
-					<div class="flex justify-end">
-						<button
-							type="submit"
-							class="px-6 py-2 mt-4 bg-teal-600 text-white rounded-md hover:bg-teal-700 focus:outline-none"
-						>
-							Save
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
+<div id="edit-modal">
+  <!-- Overlay -->
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+  <!-- Modal Content -->
+  <div class="fixed inset-0 z-50 flex justify-center items-center p-4 md:p-8">
+    <div class="relative bg-gray-50 text-black rounded-lg shadow-lg max-w-lg w-full p-6 space-y-6">
+      <!-- Modal Header: Title and Close Button (X) -->
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-semibold">Edit Card</h2>
+        <button type="button" class="text-gray-800 text-2xl hover:text-gray-600 focus:outline-none"
+          _="on click remove #edit-modal">
+          &times;
+        </button>
+      </div>
+      <form hx-put={ fmt.Sprintf("/board/%s/column/%s/card/%s/edit", boardName, columnId, card.Id) } hx-trigger="submit"
+        hx-target={ fmt.Sprintf("#card-%s", card.Id) } class="space-y-4" hx-swap="outerHTML"
+        _="on submit remove #edit-modal">
+        <!-- Input for editing the card title -->
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+          <input type="text" id="title" name="title" value={ card.Title } minlength={ fmt.Sprintf("%d",
+            constants.MinTitleLength) } maxlength={ fmt.Sprintf("%d", constants.MaxTitleLength) } required
+            class="mt-1 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-600" />
+        </div>
+        <!-- Input for selecting the column to move the card to -->
+        <div>
+          <label for="column-picker" class="block text-sm font-medium text-gray-700">Column</label>
+          <select id="column-picker" name="toColumnId"
+            class="mt-1 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-600"
+            _="on change toggle [@checked] on the next <input/>">
+            for _, column := range columns {
+            <option selected?={ columnSelected(columnId, column.Id) } value={ column.Id }>{ column.Name }</option>
+            }
+          </select>
+          <input type="checkbox" name="columnChanged" value="true" hidden />
+        </div>
+        <!-- Input for description -->
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+          <textarea id="description" name="description" rows="4" maxlength="2048"
+            placeholder="Enter the card description here..."
+            class="mt-1 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-600">
+            { card.Description }
+          </textarea>
+        </div>
+        <div class="flex justify-between">
+          <!-- Delete Button -->
+          <button type="button" hx-delete={ fmt.Sprintf("/board/%s/column/%s/card/%s", boardName, columnId, card.Id) }
+            class="px-6 py-2 mt-4 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none"
+            _="on click remove #edit-modal">
+            Delete
+          </button>
+          <!-- Save Button -->
+          <button type="submit"
+            class="px-6 py-2 mt-4 bg-teal-600 text-white rounded-md hover:bg-teal-700 focus:outline-none"
+            _="on click remove #edit-modal">
+            Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 }
 
 func columnSelected(currColumn string, columnId string) bool {
-	return currColumn == columnId
+return currColumn == columnId
 }

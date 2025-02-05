@@ -127,3 +127,23 @@ func getFormCard(r *http.Request, w http.ResponseWriter) (*store.Card, error) {
 	}, nil
 
 }
+
+func (h *Handler) DeleteCard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	columnId := chi.URLParam(r, "columnId")
+	cardId := chi.URLParam(r, "cardId")
+
+	card, err := h.storage.GetCard(r.Context(), cardId)
+	if err != nil {
+		handleError(ctx, "error getting card from storage", w, err)
+		return
+	}
+
+	err = h.storage.DeleteCard(ctx, columnId, cardId, card.Index)
+	if err != nil {
+		handleError(ctx, "error deleting card", w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

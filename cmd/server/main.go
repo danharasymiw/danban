@@ -42,6 +42,8 @@ func main() {
 	r.Get("/board/{boardName}/column/{columnId}/card/{cardId}/edit", handler.EditCardView)
 	r.Put("/board/{boardName}/column/{columnId}/card/{cardId}/edit", handler.UpdateCard)
 
+	r.Delete("/board/{boardName}/column/{columnId}/card/{cardId}", handler.DeleteCard)
+
 	r.Handle("/public/*", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 
 	isDeployed := os.Getenv("RAILWAY_PUBLIC_DOMAIN") != ``

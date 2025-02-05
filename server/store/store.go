@@ -8,7 +8,7 @@ type Storage interface {
 	AddCard(ctx context.Context, columnId string, title string) (*Card, error)
 	EditCard(ctx context.Context, card *Card) error
 	MoveCard(ctx context.Context, toColumnId, cardId string, index int) error
-	DeleteCard(ctx context.Context, boardName, columnId, cardId string) error
+	DeleteCard(ctx context.Context, columnId, cardId string, index int) error
 	GetCard(ctx context.Context, cardId string) (*Card, error)
 	GetCards(ctx context.Context, boardName, columnId, cardId string) ([]*Card, error)
 
