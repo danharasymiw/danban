@@ -7,14 +7,12 @@ import (
 )
 
 templ ColumnComponent(boardName string, column *store.Column) {
-<div class="h-full w-96 mx-1 p-1 bg-teal-100 text-black rounded-lg">
+<div class="h-screen w-96 mx-1 p-1 bg-teal-100 text-black rounded-lg flex flex-col">
   <div class="mx-4 my-1 text-lg">{ column.Name }</div>
-  <div id={ fmt.Sprintf("column-%s", column.Id) } class="sortable rounded-md">
+  <div id={ fmt.Sprintf("column-%s", column.Id) } class="sortable rounded-md flex-grow">
     for _, card := range column.Cards {
     @CardComponent(boardName, column.Id, card)
     }
-  </div>
-  <div>
     <button id={ fmt.Sprintf("column-%s-add-card", column.Id) }
       class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg" _="on click hide me show the next <form />">
       Add Card
