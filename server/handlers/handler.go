@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/danharasymiw/danban/server/logger"
 	"github.com/danharasymiw/danban/server/store"
-	"github.com/sirupsen/logrus"
 )
 
 type Handler struct {
@@ -17,9 +18,10 @@ func NewHandler(storage store.Storage) *Handler {
 	}
 }
 
-func handleError(log *logrus.Entry, msg string, w http.ResponseWriter, err error) {
+func handleError(ctx context.Context, msg string, w http.ResponseWriter, err error) {
+	log := logger.New(ctx)
 	if err != nil {
-		logrus.WithError(err).Errorf("%s: %w", msg, err)
+		log.WithError(err).Errorf("%s: %w", msg, err)
 		if _, ok := err.(store.BadRequestError); ok {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {

@@ -2,6 +2,7 @@ package components
 
 import (
 "fmt"
+"github.com/danharasymiw/danban/server/constants"
 "github.com/danharasymiw/danban/server/store"
 )
 
@@ -20,8 +21,8 @@ templ ColumnComponent(boardName string, column *store.Column) {
     </button>
     <form hx-post={ fmt.Sprintf("/board/%s/column/%s/cards/add", boardName, column.Id) } class="py-1 px-2 hidden"
       hx-swap="beforeend" hx-target={ fmt.Sprintf("#column-%s", column.Id) } _="on htmx:afterRequest reset() me">
-      <input type="text" name="title" minlength="3" maxlength="250" required
-        class="w-full px-2 py-2 bg-white rounded-md shadow-sm" />
+      <input type="text" name="title" minlength={ fmt.Sprintf("%d", constants.MinTitleLength) } maxlength={
+        fmt.Sprintf("%d", constants.MaxTitleLength) } required class="w-full px-2 py-2 bg-white rounded-md shadow-sm" />
       <div class="p-2">
         <button type="submit"
           class=" mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-md sm:w-auto px-5 py-2.5 text-center shadow-md">

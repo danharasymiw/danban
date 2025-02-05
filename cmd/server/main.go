@@ -13,10 +13,10 @@ import (
 )
 
 func main() {
+	storage := mdb.New()
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-
-	storage := mdb.New()
 
 	handler := handlers.NewHandler(storage)
 
