@@ -8,32 +8,34 @@ import (
 
 templ ColumnComponent(boardName string, column *store.Column) {
 <div class="h-screen w-96 mx-1 p-1 bg-teal-100 text-black rounded-lg flex flex-col">
-  <div class="mx-4 my-1 text-lg">{ column.Name }</div>
+  <div class="mx-4 my-1 text-lg">
+    <h2>{ column.Name }</h2>
+  </div>
   <div id={ fmt.Sprintf("column-%s", column.Id) } class="sortable rounded-md flex-grow">
     for _, card := range column.Cards {
     @CardComponent(boardName, column.Id, card)
     }
-    <button id={ fmt.Sprintf("column-%s-add-card", column.Id) }
-      class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg" _="on click hide me show the next <form />">
-      Add Card
-    </button>
-    <form hx-post={ fmt.Sprintf("/board/%s/column/%s/cards/add", boardName, column.Id) } class="py-1 px-2 hidden"
-      hx-swap="beforeend" hx-target={ fmt.Sprintf("#column-%s", column.Id) } _="on htmx:afterRequest reset() me">
-      <input type="text" name="title" minlength={ fmt.Sprintf("%d", constants.MinTitleLength) } maxlength={
-        fmt.Sprintf("%d", constants.MaxTitleLength) } required class="w-full px-2 py-2 bg-white rounded-md shadow-sm" />
-      <div class="p-2">
-        <button type="submit"
-          class=" mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-md sm:w-auto px-5 py-2.5 text-center shadow-md">
-          Add
-        </button>
-        <button type="reset" _={ fmt.Sprintf("on click hide closest <form /> show #column-%s-add-card", column.Id) }
-        class="mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300
-        font-medium rounded-lg text-md sm:w-auto px-5 py-2.5 text-center shadow-md"
-        >
-        Cancel
-        </button>
-      </div>
-    </form>
   </div>
+  <button id={ fmt.Sprintf("column-%s-add-card", column.Id) } class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg"
+    _="on click hide me show the next <form />">
+    Add Card
+  </button>
+  <form hx-post={ fmt.Sprintf("/board/%s/column/%s/cards/add", boardName, column.Id) } class="py-1 px-2 hidden"
+    hx-swap="beforeend" hx-target={ fmt.Sprintf("#column-%s", column.Id) } _="on htmx:afterRequest reset() me">
+    <input type="text" name="title" minlength={ fmt.Sprintf("%d", constants.MinTitleLength) } maxlength={
+      fmt.Sprintf("%d", constants.MaxTitleLength) } required class="w-full px-2 py-2 bg-white rounded-md shadow-sm" />
+    <div class="p-2">
+      <button type="submit"
+        class=" mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-md sm:w-auto px-5 py-2.5 text-center shadow-md">
+        Add
+      </button>
+      <button type="reset" _={ fmt.Sprintf("on click hide closest <form /> show #column-%s-add-card", column.Id) }
+      class="mx-2 text-white bg-teal-700 hover:bg-teal-800 focus:ring-4 focus:outline-none focus:ring-teal-300
+      font-medium rounded-lg text-md sm:w-auto px-5 py-2.5 text-center shadow-md"
+      >
+      Cancel
+      </button>
+    </div>
+  </form>
 </div>
 }
