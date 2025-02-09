@@ -15,27 +15,27 @@ import (
 )
 
 func (h *Handler) HandleBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	boardName := chi.URLParam(r, "boardName")
 
 	log := logger.New(r.Context())
 	log.Infof("Received get board request")
 
 	if len(boardName) <= 3 || len(boardName) > 32 {
-		handleError(r.Context(), "invalid board name length", w, store.NewBadRequestError("board name must be between 3 and 32 characters"))
+		thatWasAnError(r.Context(), w, "invalid board name length", store.NewBadRequestError("board name must be between 3 and 32 characters"))
 		return
 	}
 
-	board, err := h.storage.GetBoard(r.Context(), boardName)
+	board, err := h.storage.GetBoard(ctx, boardName)
 	if err != nil {
 		if _, ok := err.(*store.NotFoundError); ok {
 			log.Info("Board not found, creating new board")
-			board, err = h.createNewBoard(r.Context(), boardName)
-			if err != nil {
-				handleError(r.Context(), "failed to create board", w, err)
+			board, err = h.createNewBoard(ctx, boardName)
+			if thatWasAnError(ctx, w, "failed to create board", err) {
 				return
 			}
 		} else {
-			handleError(r.Context(), "failed to get board", w, err)
+			thatWasAnError(ctx, w, "failed to get board", err)
 			return
 		}
 	}
@@ -89,8 +89,7 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	var req moveCardRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
-	if err != nil {
-		handleError(ctx, "error decoding request", w, store.NewBadRequestError(fmt.Sprintf("error decoding request: %s", err)))
+	if thatWasAnError(ctx, w, "error decoding request", store.NewBadRequestError(fmt.Sprintf("error decoding request: %s", err))) {
 		return
 	}
 	logEntry = logEntry.WithFields(logrus.Fields{
@@ -100,8 +99,8 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	})
 	logEntry.Info("Found move card args")
 
-	if err = h.storage.MoveCard(ctx, req.ToColumnId, req.CardId, req.NewIndex); err != nil {
-		handleError(ctx, "error moving card in storage", w, err)
+	err = h.storage.MoveCard(ctx, req.ToColumnId, req.CardId, req.NewIndex)
+	if thatWasAnError(ctx, w, "error moving card in storage", err) {
 		return
 	}
 

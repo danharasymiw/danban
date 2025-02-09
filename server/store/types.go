@@ -57,6 +57,6 @@ func NewBadRequestError(issue string) *BadRequestError {
 	}
 }
 
-func (e BadRequestError) Error() string {
+func (e *BadRequestError) Error() string {
 	return e.issue
 }

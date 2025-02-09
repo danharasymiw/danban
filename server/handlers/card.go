@@ -18,14 +18,12 @@ func (h *Handler) AddCard(w http.ResponseWriter, r *http.Request) {
 	columnId := chi.URLParam(r, "columnId")
 
 	title, err := getFormCardTitle(r, w)
-	if err != nil {
-		handleError(ctx, "invalid card length", w, err)
+	if thatWasAnError(ctx, w, "invalid card length", err) {
 		return
 	}
 
 	card, err := h.storage.AddCard(r.Context(), columnId, title)
-	if err != nil {
-		handleError(ctx, "error adding card", w, err)
+	if thatWasAnError(ctx, w, "error adding card", err) {
 		return
 	}
 
@@ -39,14 +37,13 @@ func (h *Handler) EditCardView(w http.ResponseWriter, r *http.Request) {
 	cardId := chi.URLParam(r, "cardId")
 
 	card, err := h.storage.GetCard(r.Context(), cardId)
-	if err != nil {
-		handleError(ctx, "error getting card from storage", w, err)
+	if thatWasAnError(ctx, w, "error getting card from storage", err) {
 		return
 	}
 
 	columns, err := h.storage.GetColumns(r.Context(), boardName)
-	if err != nil {
-		handleError(ctx, "error getting board columns", w, err)
+	if thatWasAnError(ctx, w, "error getting board columns", err) {
+		return
 	}
 	components.EditCardModal(boardName, columnId, card, columns).Render(r.Context(), w)
 }
@@ -58,25 +55,22 @@ func (h *Handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	cardId := chi.URLParam(r, "cardId")
 
 	card, err := h.storage.GetCard(r.Context(), cardId)
-	if err != nil {
-		handleError(ctx, "error getting card from storage", w, err)
+	if thatWasAnError(ctx, w, "error getting card from storage", err) {
 		return
 	}
 
 	card.Title, err = getFormCardTitle(r, w)
-	if err != nil {
-		handleError(ctx, "invalid title", w, err)
+	if thatWasAnError(ctx, w, "invalid title", err) {
 		return
 	}
 
 	card.Description, err = getFormCardDescription(r, w)
-	if err != nil {
-		handleError(ctx, "invalid description", w, err)
+	if thatWasAnError(ctx, w, "invalid description", err) {
 		return
 	}
 
-	if err := h.storage.EditCard(r.Context(), card); err != nil {
-		handleError(ctx, "error editing card", w, err)
+	err = h.storage.EditCard(r.Context(), card)
+	if thatWasAnError(ctx, w, "error editing card", err) {
 		return
 	}
 
@@ -84,8 +78,8 @@ func (h *Handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("columnChanged") == "true" {
 		newColumnId := r.FormValue("toColumnId")
 		err := h.storage.MoveCard(r.Context(), newColumnId, cardId, -1)
-		if err != nil {
-			handleError(ctx, "error moving card from edit card modal", w, err)
+		if thatWasAnError(ctx, w, "error moving card from edit card modal", err) {
+			return
 		}
 	} else {
 		components.CardComponent(boardName, columnId, card).Render(r.Context(), w)
@@ -134,14 +128,12 @@ func (h *Handler) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	cardId := chi.URLParam(r, "cardId")
 
 	card, err := h.storage.GetCard(r.Context(), cardId)
-	if err != nil {
-		handleError(ctx, "error getting card from storage", w, err)
+	if thatWasAnError(ctx, w, "error getting card from storage", err) {
 		return
 	}
 
 	err = h.storage.DeleteCard(ctx, columnId, cardId, card.Index)
-	if err != nil {
-		handleError(ctx, "error deleting card", w, err)
+	if thatWasAnError(ctx, w, "error deleting card", err) {
 		return
 	}
 
