@@ -1,0 +1,37 @@
+package views
+
+templ About() {
+	@Page("") {
+		<div class="my-8 p-6 bg-white rounded-lg shadow-xl max-w-4xl mx-auto">
+			<h1 class="text-2xl font-bold mb-4 text-gray-800">What is this?</h1>
+			<p class="text-gray-600 mb-4 leading-relaxed">
+				It's a kanban style project management site like your beloved Jira or Trello. Just enter or create a
+				new board name in the search bar above.
+			</p>
+			<p class="text-gray-600 mb-6 leading-relaxed">
+				Danban is really mostly just a personal project of mine used to learn some new skills.
+			</p>
+			<h1 class="text-2xl font-bold mb-4 text-gray-800">Why should I use this over the alternatives?</h1>
+			<p class="text-gray-600 mb-4 leading-relaxed">
+				Don't. You probably shouldn't. But you can.
+			</p>
+			<p class="text-gray-600 mb-6 leading-relaxed">
+				It's missing some important features, like auth or users. Anyone can modify any board or card that they find.
+				Maybe consider that a feature in itself?
+			</p>
+			<h1 class="text-2xl font-bold mb-4 text-gray-800">Your site is broken!</h1>
+			<p class="text-gray-600 mb-4 leading-relaxed">
+				Probably. You can let me know about it right here on
+				<a
+					href="/board/danban"
+					class="text-teal-700 underline hover:text-teal-800 transition duration-300 ease-in-out"
+				>Danban</a>,
+				or over on <a
+	href="https://github.com/danharasymiw/danban"
+	class="text-teal-700 underline hover:text-teal-800 transition duration-300 ease-in-out"
+>GitHub</a>,
+				maybe you'll even be kind enough to contribute?
+			</p>
+		</div>
+	}
+}
