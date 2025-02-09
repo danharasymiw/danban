@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 
@@ -20,7 +21,21 @@ func main() {
 
 	handler := handlers.NewHandler(storage)
 
-	r.Get("/", handler.HandleHome)
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		var boardName []byte
+
+		const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+		// Loop to generate random characters
+		for i := 0; i < 12; i++ {
+			// Generate a random index in the charset
+			randomIndex := rand.Intn(len(charset))
+			// Append the randomly selected character to the result
+			boardName = append(boardName, charset[randomIndex])
+		}
+
+		redirectURL := fmt.Sprintf("/board/%s", boardName)
+		http.Redirect(w, r, redirectURL, http.StatusFound)
+	})
 
 	r.Get("/board", func(w http.ResponseWriter, r *http.Request) {
 		// Parse the query parameter 'name'
@@ -43,6 +58,8 @@ func main() {
 	r.Put("/board/{boardName}/column/{columnId}/card/{cardId}/edit", handler.UpdateCard)
 
 	r.Delete("/board/{boardName}/column/{columnId}/card/{cardId}", handler.DeleteCard)
+
+	r.Get("/about", handler.HandleAbout)
 
 	r.Handle("/public/*", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 
