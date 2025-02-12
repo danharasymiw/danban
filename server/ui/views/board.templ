@@ -1,20 +1,20 @@
 package views
 
 import (
-"github.com/danharasymiw/danban/server/store"
-"github.com/danharasymiw/danban/server/ui/components"
+	"github.com/danharasymiw/danban/server/store"
+	"github.com/danharasymiw/danban/server/ui/components"
 )
 
 templ Board(b *store.Board) {
-@Page(b.Name) {
-<div class="h-full flex flex-nowrap gap-4 m-4 overflow-x-scroll">
-  for _, column := range b.Columns {
-  @components.ColumnComponent(b.Name, column)
-  }
-</div>
-<script>
+	@Page(b.Name) {
+		<div class="h-full flex flex-nowrap gap-4 m-4 overflow-x-scroll">
+			for _, column := range b.Columns {
+				@components.ColumnComponent(b.Name, column)
+			}
+		</div>
+		<script>
   _hyperscript.config.defaultHideShowStrategy = 'twDisplay';
 </script>
-@components.SortableCards(b.Name)
-}
+		@components.SortableCards(b.Name)
+	}
 }
