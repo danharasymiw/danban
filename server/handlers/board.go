@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -89,7 +88,7 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	var req moveCardRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
-	if thatWasAnError(ctx, w, "error decoding request", store.NewBadRequestError(fmt.Sprintf("error decoding request: %s", err))) {
+	if thatWasAnError(ctx, w, "error decoding request", err) {
 		return
 	}
 	logEntry = logEntry.WithFields(logrus.Fields{

@@ -82,7 +82,7 @@ func (h *Handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		components.CardComponent(boardName, columnId, card).Render(r.Context(), w)
+		components.CardComponent(boardName, columnId, card).Render(ctx, w)
 	}
 
 }

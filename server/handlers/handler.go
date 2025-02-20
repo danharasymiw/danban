@@ -20,8 +20,8 @@ func NewHandler(storage store.Storage) *Handler {
 }
 
 func thatWasAnError(ctx context.Context, w http.ResponseWriter, msg string, err error) bool {
-	log := logger.New(ctx)
 	if err != nil {
+		log := logger.New(ctx)
 		log.WithError(err).Errorf("%s: %w", msg, err)
 
 		var badRequest *store.BadRequestError
