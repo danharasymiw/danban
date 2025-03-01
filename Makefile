@@ -10,3 +10,7 @@ serve:
 
 tailwind:
 	npx tailwindcss -c ./tailwind.config.js -i ./public/styles.css -o ./public/output.css --watch
+
+format:
+	gofmt -w .
+	templ fmt .

@@ -13,12 +13,12 @@ templ ColumnComponent(boardName string, column *store.Column) {
 				<h2 class="text-lg font-semibold">{ column.Name }</h2>
 			</div>
 		</div>
-		<div id={ fmt.Sprintf("column-%s", column.Id) } class="sortable rounded-md flex-grow overflow-y-auto">
-			for _, card := range column.Cards {
-				@CardComponent(boardName, column.Id, card)
-			}
-		</div>
 		<div>
+			<div id={ fmt.Sprintf("column-%s", column.Id) } class="sortable rounded-md flex-grow overflow-y-auto">
+				for _, card := range column.Cards {
+					@CardComponent(boardName, column.Id, card)
+				}
+			</div>
 			<button
 				id={ fmt.Sprintf("column-%s-add-card", column.Id) }
 				class="mx-2 p-2 bg-teal-100 text-black rounded-md text-lg"

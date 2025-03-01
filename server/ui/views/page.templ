@@ -5,7 +5,7 @@ templ Page(boardName string) {
 	<html lang="en">
 		<head>
 			<title>Danban</title>
-			<link rel="icon" href="/public/output.css"/>
+			<link rel="icon" type="image/x-icon" href="/public/images/danban_icon.png"/>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/public/output.css"/>
@@ -28,15 +28,17 @@ templ Page(boardName string) {
 		</head>
 		<body class="font-bebas text-xl leading-tight bg-teal-200 bg-repeat-y min-h-screen flex flex-col" hx-boost="true">
 			<nav class="text-white">
-				<div class="bg-teal-500 md:w-12/12 h-16 shadow-md flex justify-between items-center flex-col md:flex-row">
+				<div class="bg-teal-500 h-16 shadow-md flex items-center justify-between px-4 w-full">
+					<!-- Site title on the left -->
 					<a href="/">
 						<div class="cursor-pointer flex justify-center items-center ml-3">
 							<img src="/public/images/danban_icon.png" class="h-16 mx-2" alt="Danban Logo"/>
 							<h3 class="text-white text-2xl font-semibold py-2 md:py-0">Danban</h3>
 						</div>
 					</a>
+					<!-- Centered search bar (take full width but with max width limit) -->
 					<form
-						class="max-w-sm mx-auto"
+						class="flex-grow flex justify-center max-w-lg"
 						hx-get="/board"
 						hx-trigger="submit"
 						hx-push-url="true"
@@ -62,9 +64,8 @@ templ Page(boardName string) {
 							</button>
 						</div>
 					</form>
-					<ul
-						class="flex lg:justify-end md:justify-end justify-evenly items-center w-full md:w-1/2 lg:w-1/3 mr-0 md:mr-5 py-2 md:py-0"
-					>
+					<!-- Navbar items on the right (with flex-grow-0 to prevent stretching) -->
+					<ul class="flex flex-grow-0 justify-end items-center w-auto py-2 md:py-0">
 						<li class="hover:bg-teal-400 px-3 py-1 rounded-sm hover:text-teal-100 font-semibold cursor-pointer">
 							<a href="/">Home</a>
 						</li>
