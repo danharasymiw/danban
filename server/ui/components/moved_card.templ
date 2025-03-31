@@ -1,0 +1,12 @@
+package components
+
+import (
+	"fmt"
+	"github.com/danharasymiw/danban/server/store"
+)
+
+templ MovedCardComponent(boardName, columnId string, card *store.Card) {
+	<div hx-swap-oob={ fmt.Sprintf("beforeend:#column-%s", columnId) }>
+		@CardComponent(boardName, columnId, card)
+	</div>
+}

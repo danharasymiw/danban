@@ -7,7 +7,12 @@ import (
 )
 
 templ ColumnComponent(boardName string, column *store.Column) {
-	<div class="max-h-[calc(100vh-6rem)] w-96 mx-1 p-1 bg-teal-100 text-black rounded-lg flex flex-col overflow-hidden">
+	<div
+		class="max-h-[calc(100vh-6rem)] w-96 mx-1 p-1 bg-teal-100 text-black rounded-lg flex flex-col overflow-hidden"
+		hx-trigger={ fmt.Sprintf("movedCard-column-%s from:body", column.Id) }
+		hx-get={ fmt.Sprintf("/board/%s/column/%s",
+  boardName, column.Id) }
+	>
 		<div>
 			<div class="mx-4 my-1">
 				<h2 class="text-lg font-semibold">{ column.Name }</h2>

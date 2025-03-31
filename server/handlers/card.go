@@ -81,6 +81,7 @@ func (h *Handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		if thatWasAnError(ctx, w, "error moving card from edit card modal", err) {
 			return
 		}
+		components.MovedCardComponent(boardName, newColumnId, card).Render(ctx, w)
 	} else {
 		components.CardComponent(boardName, columnId, card).Render(ctx, w)
 	}

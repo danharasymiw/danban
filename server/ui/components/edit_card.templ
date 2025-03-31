@@ -30,7 +30,7 @@ templ EditCardModal(boardName, columnId string, card *store.Card, columns []*sto
 					hx-target={ fmt.Sprintf("#card-%s", card.Id) }
 					class="space-y-4"
 					hx-swap="outerHTML"
-					_="on submit remove #edit-modal"
+					_="on htmx:afterRequest remove #edit-modal"
 				>
 					<!-- Input for editing the card title -->
 					<div>
